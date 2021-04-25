@@ -13,7 +13,12 @@ import Link from '@material-ui/core/Link';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import axios from 'axios';
-import Badge from '@material-ui/core/Badge';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import TextField from '@material-ui/core/TextField';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -68,10 +73,46 @@ export default function Pricing() {
   const classes = useStyles();
 
   const [products ,setProducts] = React.useState([]);
-  const [cartitems , setCartitems] = React.useState([]);
-  const [numofitems , setNumofitems] = React.useState([]);
-  const [price, setPrice] = React.useState(0);
+  const [open, setOpen] = React.useState(false);
+  const [title, setTitle] = React.useState('');
+   const [des, setDes] = React.useState('');
+   const [price, setPrice] = React.useState(0);
+   const [id, setId] = React.useState('');
+
+
+   const handleClickOpen = () => {
+     setOpen(true);
+   };
+ 
+   const handleClose = () => {
+     setOpen(false);
+   };
   
+   const handlesave = (e) => {
+    
+    e.preventDefault();
+    
+    const productdetail = {
+        "title" : title,
+        "description" : des,
+        "price" : price
+    };
+    axios.put(`http://localhost:4200/products/${id}`,productdetail)
+    .then(response => {
+       console.log("add product",response.data)
+    });
+    setTitle("");
+    setDes(""); 
+    setPrice(0);
+
+    axios.get('http://localhost:4200/products')
+                    .then(response => {
+                      setProducts(response.data);
+                      console.log("products",response);
+                  });
+
+                  setOpen(false);
+  }
   
     useEffect(() => {
       axios.get('http://localhost:4200/products')
@@ -80,8 +121,6 @@ export default function Pricing() {
         console.log("products",response);
     });
     }, []);   
-
-
    
 
   return (
@@ -90,27 +129,94 @@ export default function Pricing() {
       <AppBar position="static" color="default" elevation={0} className={classes.appBar}>
         <Toolbar className={classes.toolbar}>
           <Typography variant="h6" color="inherit" noWrap className={classes.toolbarTitle}>
-            AWS
+            Shoe Mart
           </Typography>
           <nav>
-          <Badge badgeContent={numofitems} color="primary">
-            <Link href="/cart" className={classes.link}>
+          <Link href="/customerdetails" className={classes.link}>
               <Button variant="outlined" onClick={()=>{
-                var cartstring = JSON.stringify(cartitems);
-                var pricestring = price.toString();
-                localStorage.setItem("cart",cartstring);
-                localStorage.setItem("price",pricestring);
-
+                
               }}>
-                Cart
+                Customer Details
+                </Button>
+            </Link>
+            <Link href="/orderdetails" className={classes.link}>
+              <Button variant="outlined" onClick={()=>{
+                
+              }}>
+                Order Details
+                </Button>
+            </Link>
+            <Link href="/addproduct" className={classes.link}>
+              <Button variant="outlined" onClick={()=>{
+                
+              }}>
+                ADD Product
                 </Button>
             </Link>
           
-      </Badge>
           </nav>
         </Toolbar>
       </AppBar>
       {/* Hero unit */}
+
+      {open ? 
+      <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+      <DialogTitle id="form-dialog-title">Edit product</DialogTitle>
+      <DialogContent>
+      <form className={classes.form} noValidate >
+          <Grid container spacing={2}>
+            <Grid item xs={12} >
+              <TextField
+                autoComplete="fname"
+                name="title"
+                variant="outlined"
+                required
+                fullWidth
+                id="title"
+                label="Product Name"
+                autoFocus
+                onChange = {(e) => setTitle(e.target.value)} value = {title}
+              />
+            </Grid>
+          
+            <Grid item xs={12}>
+              <TextField
+                variant="outlined"
+                required
+                fullWidth
+                id="description"
+                label="Product Description"
+                name="description"
+                onChange = {(e) => setDes(e.target.value)} value = {des}
+              />
+            </Grid>
+            <Grid item xs={12}>
+            <TextField
+                variant="outlined"
+                required
+                fullWidth
+                id="price"
+                label="Price"
+                name="price"
+                onChange = {(e) => setPrice(e.target.value)} value = {price}
+              />
+            </Grid>
+            
+          </Grid>
+        </form>
+        
+      </DialogContent>
+      <DialogActions>
+        <Button variant="contained" color="secondary" onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+        <Button variant="contained" color="primary" onClick={handlesave} color="primary">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+      :
+      ""}
 
 
       <Container maxWidth="md" component="main">
@@ -140,19 +246,29 @@ export default function Pricing() {
                 </CardContent>
                 <CardActions>
                   <Button fullWidth variant="contained" color="primary" onClick={()=> {
-                     var list = cartitems;
-                     var prices = price;
-                     var newprice = prices+product.price;
-                     var newitem = { "title" : product.title, "price" : product.price}
-                     setPrice(newprice);
-                     list.push(newitem);
-                     setCartitems(list);
-                     setNumofitems(list.length)
-                     console.log("click",cartitems.length);
-                     console.log("cart",cartitems);
+                     setOpen(true);
+                     setTitle(product.title);
+                     setDes(product.description);
+                     setPrice(product.price);
+                     setId(product._id);
                   }} >
-                    Add to cart
+                   Edit product
                   </Button>
+                  <Button fullWidth variant="contained" color="secondary" onClick={()=> {
+                     axios.delete(`http://localhost:4200/products/${product._id}`)
+                     .then(response => {
+                       console.log("delete",response);
+                      
+                   });
+
+                   axios.get('http://localhost:4200/products')
+                    .then(response => {
+                      setProducts(response.data);
+                      console.log("products",response);
+                  });
+                    }} >
+                     Delete 
+                    </Button>
                 </CardActions>
               </Card>
             </Grid>
